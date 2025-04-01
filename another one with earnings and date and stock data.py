@@ -2,7 +2,7 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
-import pandas as pd
+from matplotlib.animation import FuncAnimation
 
 # Define tickers for 7 companies
 tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NFLX"]
@@ -16,7 +16,7 @@ all_companies = []
 # Fetch data for each ticker
 for ticker in tickers:
     stock = yf.Ticker(ticker)
-    stock_data = stock.history(period="1y")  # Fetch 1 year of historical stock data
+    stock_data = stock.history(period="10d")  # Fetch last 10 days of historical stock data
     earnings_data = stock.financials.loc["Net Income"]  # Fetch net income (earnings)
 
     # Validate data
@@ -47,18 +47,33 @@ all_earnings = np.array(all_earnings)
 fig = plt.figure(figsize=(10, 8))
 ax = fig.add_subplot(111, projection="3d")
 
-# Scatter plot for all companies
-scatter = ax.scatter(date_indices, all_earnings, all_prices, c=all_prices, cmap="viridis", s=100)
+# Initialize scatter plot
+scatter = ax.scatter([], [], [], c=[], cmap="viridis", s=100)
 
 # Set axes labels
 ax.set_xlabel("Date Index")
 ax.set_ylabel("Earnings (Net Income)")
 ax.set_zlabel("Stock Prices (Closing Price)")
-ax.set_title("3D Plot: Earnings vs Stock Prices Over Dates for Multiple Companies")
+ax.set_title("Animated 3D Plot: Earnings vs Stock Prices Over Dates")
 
-# Annotate the plot with company names at specific indices
-for idx in range(0, len(all_dates), len(all_dates) // len(tickers)):
-    ax.text(date_indices[idx], all_earnings[idx], all_prices[idx], all_companies[idx], color="black")
+# Define update function for animation
+def update(frame):
+    ax.clear()  # Clear the previous plot
+    ax.set_xlabel("Date Index")
+    ax.set_ylabel("Earnings (Net Income)")
+    ax.set_zlabel("Stock Prices (Closing Price)")
+    ax.set_title("Animated 3D Plot: Earnings vs Stock Prices Over Dates")
+    scatter = ax.scatter(
+        date_indices[:frame], 
+        all_earnings[:frame], 
+        all_prices[:frame], 
+        c=all_prices[:frame], 
+        cmap="viridis", 
+        s=100
+    )
+    return scatter,
 
-plt.colorbar(scatter, label="Stock Price (Closing Price)")
+# Create animation
+ani = FuncAnimation(fig, update, frames=len(all_dates), interval=200, repeat=True)
+
 plt.show()
